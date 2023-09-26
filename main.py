@@ -1,5 +1,5 @@
 #!/usr/bin/python
-
+import shutil
 import sys
 import os
 import ntpath
@@ -102,16 +102,24 @@ class FirebaseScanner:
                 "The same APK is already decompiled. Skipping decompilation and proceeding with scanning application.", "INFO")
             return project_dir
 
+        # Check if the apktool JAR file exists in the Dependencies directory
+        if not os.path.exists(self.configuration.apktoolPath):
+            myPrint(
+                f"Error: Apktool JAR file not found at {self.configuration.apktoolPath}. Please make sure it is included.", "ERROR")
+            sys.exit(1)
+
         # Decompile the APK file if it has not already been decompiled.
         os.mkdir(project_dir)
         myPrint("Decompiling the APK file using APKtool.", "INFO")
 
         try:
             apktool_decode(self.configuration.apkFilePath,
-                           project_dir, force=True)
+                           project_dir, force=True, apktool_path=self.configuration.apktoolPath)
         except Exception as e:
             myPrint(
                 f"Apktool failed with error: {str(e)}. Please try again.", "ERROR")
+            # Clean up the directory if the decompilation failed
+            shutil.rmtree(project_dir, ignore_errors=True)
             sys.exit(1)
 
         myPrint("Successfully decompiled the application. Proceeding with enumerating Firebase project names from the application code.", "INFO")
