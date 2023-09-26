@@ -14,7 +14,7 @@ Firebase Scanner is a Python script for analyzing Firebase usage in Android apps
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/FirebaseScanner.git
+git clone https://github.com/Reddragon300/FirebaseScanner.git
 ```
 2. Change Directory:
 ```bash
