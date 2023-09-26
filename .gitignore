@@ -1,4 +1,6 @@
 # .gitignore
+/Dependencies/apktool_2.8.1.jar
+
 
 # Python-specific
 __pycache__/
