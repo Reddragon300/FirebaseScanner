@@ -114,8 +114,8 @@ class FirebaseScanner:
                 f"Apktool failed with error: {str(e)}. Please try again.", "ERROR")
             sys.exit(1)
 
-    myPrint("Successfully decompiled the application. Proceeding with enumerating Firebase project names from the application code.", "INFO")
-    return project_dir
+        myPrint("Successfully decompiled the application. Proceeding with enumerating Firebase project names from the application code.", "INFO")
+        return project_dir
 
     def findFirebaseProjectNames(self) -> None:
         # Regex to find Firebase project names in the decompiled APK file.
