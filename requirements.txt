@@ -1,0 +1,2 @@
+apktool==2.8.1
+requests==2.26.0
