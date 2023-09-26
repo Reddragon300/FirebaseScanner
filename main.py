@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import shutil
+import subprocess
 import sys
 import os
 import ntpath
@@ -9,10 +9,11 @@ import argparse
 import logging
 import requests
 import json
+import shutil  # Added import for shutil
 from apktool import decode as apktool_decode
 from typing import List, Dict, Any
 from concurrent.futures import ThreadPoolExecutor
-
+import platform  # Added import for platform
 
 class bcolors:
     TITLE = '\033[95m'
@@ -27,7 +28,6 @@ class bcolors:
     FGWHITE = '\033[37m'
     FAIL = '\033[95m'
 
-
 class Configuration:
     def __init__(self):
         self.rootDir: str = os.path.expanduser("~") + "/.SourceCodeAnalyzer/"
@@ -36,7 +36,6 @@ class Configuration:
         self.apkFileName: str = ""
         self.firebaseProjectList: List[str] = []
         self.apktoolPath: str = "./Dependencies/apktool_2.8.1.jar"
-
 
 class Firebase:
     __cache = {}
@@ -52,7 +51,6 @@ class Firebase:
                 Firebase.__cache[firebase_project] = False
 
         return Firebase.__cache[firebase_project]
-
 
 class FirebaseScanner:
     def __init__(self, apk_file_path=None, firebase_projects=None):
@@ -92,38 +90,61 @@ class FirebaseScanner:
                     "Incorrect APK file path. Please try again with the correct file name.", "ERROR")
                 sys.exit(1)
 
-    def decompileAPK(self) -> str:
+    def decompileAPK(self):
         myPrint("Initiating APK Decompilation Process.", "INFO")
-        project_dir = os.path.join(
+        projectDir = os.path.join(
             self.configuration.rootDir, f"{self.configuration.apkFileName}_{hashlib.md5().hexdigest()}")
 
-        if os.path.exists(project_dir):
+        if os.path.exists(projectDir):
             myPrint(
                 "The same APK is already decompiled. Skipping decompilation and proceeding with scanning application.", "INFO")
-            return project_dir
+            return projectDir
+
+        os.mkdir(projectDir)
+        myPrint("Decompiling the APK file using APKtool.", "INFO")
 
         # Check if the apktool JAR file exists in the Dependencies directory
         if not os.path.exists(self.configuration.apktoolPath):
             myPrint(
-                f"Error: Apktool JAR file not found at {self.configuration.apktoolPath}. Please make sure it is included.", "ERROR")
-            sys.exit(1)
+                f"Apktool JAR file not found in '{self.configuration.apktoolPath}' directory.", "ERROR")
+            use_local_apktool = False
+        else:
+            use_local_apktool = True
 
-        # Decompile the APK file if it has not already been decompiled.
-        os.mkdir(project_dir)
-        myPrint("Decompiling the APK file using APKtool.", "INFO")
+        # Check the availability of a local Apktool installation
+        local_apktool_command = "apktool" if platform.system() == "Windows" else "apktool.sh"
+        try:
+            apktool_version = subprocess.check_output(
+                [local_apktool_command, "--version"], stderr=subprocess.STDOUT, universal_newlines=True)
+            myPrint(f"Local Apktool found: {apktool_version.strip()}", "INFO")
+        except FileNotFoundError:
+            myPrint("Local Apktool not found.", "INFO")
+            use_local_apktool = False
+
+        # Determine whether to use local Apktool or the bundled Apktool JAR
+        if use_local_apktool:
+            apktool_command = [local_apktool_command, "d", "--output", projectDir + "/apktool", self.configuration.apkFilePath]
+        else:
+            apktool_command = ["java", "-jar", self.configuration.apktoolPath, "d", "--output", projectDir + "/apktool", self.configuration.apkFilePath]
 
         try:
-            apktool_decode(self.configuration.apkFilePath,
-                           project_dir, force=True, apktool_path=self.configuration.apktoolPath)
+            # Run the Apktool command
+            result = subprocess.run(apktool_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+            if result.returncode != 0:
+                myPrint(f"Apktool failed with exit status {result.returncode}. Please try again.", "ERROR")
+                print(result.stdout)
+                print(result.stderr)
+                # Clean up the directory if the decompilation failed
+                shutil.rmtree(projectDir, ignore_errors=True)
+                sys.exit(1)
         except Exception as e:
-            myPrint(
-                f"Apktool failed with error: {str(e)}. Please try again.", "ERROR")
+            myPrint(f"Apktool failed with error: {str(e)}. Please try again.", "ERROR")
             # Clean up the directory if the decompilation failed
-            shutil.rmtree(project_dir, ignore_errors=True)
+            shutil.rmtree(projectDir, ignore_errors=True)
             sys.exit(1)
 
         myPrint("Successfully decompiled the application. Proceeding with enumerating Firebase project names from the application code.", "INFO")
-        return project_dir
+        return projectDir
 
     def findFirebaseProjectNames(self) -> None:
         # Regex to find Firebase project names in the decompiled APK file.
