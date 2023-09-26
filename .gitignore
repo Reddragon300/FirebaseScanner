@@ -1,0 +1,17 @@
+# .gitignore
+
+# Python-specific
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.env
+
+# Logs
+logs/
+
+# IDE-specific
+.idea/
+.vscode/
