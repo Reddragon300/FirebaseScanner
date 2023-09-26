@@ -30,7 +30,7 @@ pip3 install -r requirements.txt
 ## Analyze an APK File
 To analyze an APK file, run the following command:
 ```bash
-python your_script.py --apk /path/to/your.apk
+python main.py --apk /path/to/your.apk
 ```
 
 Replace `/path/to/your.apk` with the path to the APK file you want to analyze.
@@ -39,7 +39,7 @@ Replace `/path/to/your.apk` with the path to the APK file you want to analyze.
 
 To analyze a list of Firebase project names, run the following command:
 ```bash
-python your_script.py --projects project1,project2,project3
+python main.py --projects project1,project2,project3
 ```
 
 Replace `project1,project2,project3` with the comma-separated list of Firebase project names you want to analyze.
